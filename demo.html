@@ -132,13 +132,24 @@
                 In mattis odio ipsum, eu molestie velit elementum id. Fusce porta ac eros nec egestas. Aenean id metus eget felis sodales tristique in vel quam. Morbi at egestas mi. Integer viverra elementum mi nec tristique. Praesent rutrum pellentesque dui quis laoreet. Phasellus placerat et dui ac pharetra. Maecenas vel posuere velit. Cras maximus laoreet justo.
             </p>
         </div>
-
+        <button onclick="test();">test</button>
         <script>
             $('#SidePanel').neipanel({
                 panelSize: '85vw',
                 position: 'right'
             });
-            $('#SidePanel').neipanel('show');
+            $('#SidePanel').on('neipanel.show', function (e) {
+                console.log(e);
+                //e.preventDefault();
+            });
+            $('#SidePanel').on('neipanel.hide', function (e) {
+                console.log(e);
+                //e.preventDefault();
+            });
+
+            function test() {
+                $('#SidePanel').neipanel('show');
+            }
         </script>
     </body>
 </html>

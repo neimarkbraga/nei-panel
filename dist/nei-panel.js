@@ -151,66 +151,79 @@ $.fn.neipanel = function(a) {
         onSwipe(elements.backdrop, function (direction) {
             if(direction == option.direction && option.swipe) neiPanel.hide();
         });
+
         $('body')
             .append(elements.panel)
             .append(elements.buttonBar)
             .append(elements.backdrop);
 
         this.show = function () {
-            $(elements.backdrop).css('top', '0');
-            var nonPanelElements = $('body *')
-                .not($(elements.panel))
-                .not($(elements.panel).find('*'))
-                .not($(elements.buttonBar))
-                .not($(elements.buttonBar).find('*'))
-                .not($(elements.backdrop))
-                .not('script');
+            var handler = function (e) {
+                if(!e.isDefaultPrevented()){
+                    $(elements.backdrop).css('top', '0');
+                    var nonPanelElements = $('body *')
+                        .not($(elements.panel))
+                        .not($(elements.panel).find('*'))
+                        .not($(elements.buttonBar))
+                        .not($(elements.buttonBar).find('*'))
+                        .not($(elements.backdrop))
+                        .not('script');
 
-            $(element).trigger({type: "neipanel.show"});
-            $('body').css('overflow', 'hidden');
-            var panelAnimation = {};
-            panelAnimation[option.position] = '0';
-            $(elements.panel).animate(panelAnimation, option.showDuration, 'swing', function () {
-                $(element).trigger({type: "neipanel.shown"});
-            });
+                    $('body').css('overflow', 'hidden');
+                    var panelAnimation = {};
+                    panelAnimation[option.position] = '0';
+                    $(elements.panel).animate(panelAnimation, option.showDuration, 'swing', function () {
+                        $(element).trigger({type: "neipanel.shown"});
+                    });
 
-            var barAnimation = {};
-            barAnimation[expand] = option.hideBarSize;
-            barAnimation[option.position] = option.panelSize;
-            $(elements.buttonBar).animate(barAnimation, option.showDuration);
+                    var barAnimation = {};
+                    barAnimation[expand] = option.hideBarSize;
+                    barAnimation[option.position] = option.panelSize;
+                    $(elements.buttonBar).animate(barAnimation, option.showDuration);
 
-            $(elements.backdrop).animate({
-                opacity: option.backdropOpacity
-            }, option.showDuration);
+                    $(elements.backdrop).animate({
+                        opacity: option.backdropOpacity
+                    }, option.showDuration);
 
-            for(var i = 0; i < nonPanelElements.length; i++) if(nonPanelElements[i].tabIndex > -1) {
-                disableElements.push([nonPanelElements[i], nonPanelElements[i].tabIndex]);
-                nonPanelElements[i].tabIndex = '-1';
-            }
+                    for(var i = 0; i < nonPanelElements.length; i++) if(nonPanelElements[i].tabIndex > -1) {
+                        disableElements.push([nonPanelElements[i], nonPanelElements[i].tabIndex]);
+                        nonPanelElements[i].tabIndex = '-1';
+                    }
+                }
+                $(element).off('neipanel.show', handler)
+            };
+            $(element).on('neipanel.show', handler);
+            $(element).trigger({type: 'neipanel.show'});
         };
         this.hide = function () {
+            var handler = function (e) {
+                if(!e.isDefaultPrevented()){
+                    $('body').css('overflow', '');
+                    var panelAnimation = {};
+                    panelAnimation[option.position] = '-105%';
+                    $(elements.panel).animate(panelAnimation, option.hideDuration, 'swing', function () {
+                        $(element).trigger({type: "neipanel.hidden"});
+                    });
+
+                    var barAnimation = {};
+                    barAnimation[expand] = '0';
+                    barAnimation[option.position] = '0';
+                    $(elements.buttonBar).animate(barAnimation, option.hideDuration);
+
+                    $(elements.backdrop).animate({
+                        opacity: '0'
+                    }, option.hideDuration, 'swing', function () {
+                        $(elements.backdrop).css('top', '-105%');
+                    });
+
+                    for(var i = 0; i < disableElements.length; i++)
+                        disableElements[i][0].tabIndex = (disableElements[i][1] == '-1')? undefined:disableElements[i][1];
+                    disableElements = [];
+                }
+                $(element).off('neipanel.hide', handler);
+            };
+            $(element).on('neipanel.hide', handler);
             $(element).trigger({type: "neipanel.hide"});
-            $('body').css('overflow', '');
-            var panelAnimation = {};
-            panelAnimation[option.position] = '-105%';
-            $(elements.panel).animate(panelAnimation, option.hideDuration, 'swing', function () {
-                $(element).trigger({type: "neipanel.hidden"});
-            });
-
-            var barAnimation = {};
-            barAnimation[expand] = '0';
-            barAnimation[option.position] = '0';
-            $(elements.buttonBar).animate(barAnimation, option.hideDuration);
-
-            $(elements.backdrop).animate({
-                opacity: '0'
-            }, option.hideDuration, 'swing', function () {
-                $(elements.backdrop).css('top', '-105%');
-            });
-
-            for(var i = 0; i < disableElements.length; i++)
-                disableElements[i][0].tabIndex = (disableElements[i][1] == '-1')? undefined:disableElements[i][1];
-            disableElements = [];
         };
     };
     if(a.constructor != String) $(element).data('neipanel', new NeiPanel(a));
