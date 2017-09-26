@@ -50,7 +50,6 @@ $.fn.neipanel = function(a) {
     };
     var NeiPanel = function (option) {
         var neiPanel = this;
-        this.option = option;
         option = option || {};
         option.panelClass = option.panelClass || '';
         option.hideBarClass = option.hideBarClass || '';
@@ -67,8 +66,8 @@ $.fn.neipanel = function(a) {
         option.swipe = (option.swipe == undefined)? true:option.swipe;
         option.backdrop = (option.backdrop == undefined)? true:option.backdrop;
         option.displayHideBar = (option.displayHideBar == undefined)? true:option.displayHideBar;
-        var disableElements = [];
         var temp = undefined;
+        var disabledElements = [];
         var pos = {
             top: option.position == 'top',
             right: option.position == 'right',
@@ -91,13 +90,23 @@ $.fn.neipanel = function(a) {
                 default: return null; break;
             }
         };
-        var hideIcon = function () {
-            switch (option.position){
-                case 'top': return '&#9206;'; break;
-                case 'right': return '&#9205;'; break;
-                case 'bottom': return '&#9207;'; break;
-                case 'left': return '&#9204;'; break;
+        var enableElements = function () {
+            for(var i = 0; i < disabledElements.length; i++) disabledElements[i][0].tabIndex = disabledElements[i][1];
+            disabledElements = [];
+        };
+        var disableElements = function (e) {
+            for(var i = 0; i < e.length; i++) if(e[i].tabIndex > -1) {
+                disabledElements.push([e[i], e[i].tabIndex]);
+                e[i].tabIndex = '-1';
+                e[i].blur();
             }
+        };
+        var disablePanel = function () {
+            disableElements($(elements.panel));
+            disableElements($(elements.panel).find('*'));
+            disableElements($(elements.buttonBar));
+            disableElements($(elements.buttonBar).find('*'));
+            disableElements($(elements.backdrop));
         };
         $(elements.panel)
             .attr('class', option.panelClass)
@@ -113,8 +122,6 @@ $.fn.neipanel = function(a) {
 
         $(elements.hideIcon)
             .attr('class', option.hideIconClass);
-            //.css('font-size', option.hideBarSize)
-            //.html(hideIcon());
         for(temp in pos){
             if(temp == oppsitePosition(option.position)) $(elements.hideIcon).css('border-' + temp, option.iconSize + ' solid ' + option.iconColor);
             else if(temp != option.position) $(elements.hideIcon).css('border-' + temp, option.iconSize + ' solid transparent');
@@ -161,15 +168,8 @@ $.fn.neipanel = function(a) {
             var handler = function (e) {
                 if(!e.isDefaultPrevented()){
                     $(elements.backdrop).css('top', '0');
-                    var nonPanelElements = $('body *')
-                        .not($(elements.panel))
-                        .not($(elements.panel).find('*'))
-                        .not($(elements.buttonBar))
-                        .not($(elements.buttonBar).find('*'))
-                        .not($(elements.backdrop))
-                        .not('script');
-
                     $('body').css('overflow', 'hidden');
+
                     var panelAnimation = {};
                     panelAnimation[option.position] = '0';
                     $(elements.panel).animate(panelAnimation, option.showDuration, 'swing', function () {
@@ -185,10 +185,14 @@ $.fn.neipanel = function(a) {
                         opacity: option.backdropOpacity
                     }, option.showDuration);
 
-                    for(var i = 0; i < nonPanelElements.length; i++) if(nonPanelElements[i].tabIndex > -1) {
-                        disableElements.push([nonPanelElements[i], nonPanelElements[i].tabIndex]);
-                        nonPanelElements[i].tabIndex = '-1';
-                    }
+                    enableElements();
+                    disableElements($('body *')
+                        .not($(elements.panel))
+                        .not($(elements.panel).find('*'))
+                        .not($(elements.buttonBar))
+                        .not($(elements.buttonBar).find('*'))
+                        .not($(elements.backdrop))
+                        .not('script'));
                 }
                 $(element).off('neipanel.show', handler)
             };
@@ -215,16 +219,16 @@ $.fn.neipanel = function(a) {
                     }, option.hideDuration, 'swing', function () {
                         $(elements.backdrop).css('top', '-105%');
                     });
-
-                    for(var i = 0; i < disableElements.length; i++)
-                        disableElements[i][0].tabIndex = (disableElements[i][1] == '-1')? undefined:disableElements[i][1];
-                    disableElements = [];
                 }
                 $(element).off('neipanel.hide', handler);
             };
             $(element).on('neipanel.hide', handler);
             $(element).trigger({type: "neipanel.hide"});
+
+            enableElements();
+            disablePanel();
         };
+        disablePanel();
     };
     if(a.constructor != String) $(element).data('neipanel', new NeiPanel(a));
     else if($(element).data('neipanel')) $(element).data('neipanel')[a]();
